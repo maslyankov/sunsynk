@@ -196,7 +196,7 @@ jobs:
         id: platforms_raw
         run: |
           ls outputs
-          echo "value=$(cat outputs/*.txt)" >> "$GITHUB_OUTPUT"
+          echo "value=$(paste -sd ',' outputs/*.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Generate tags for multi-platform image
         run: |
@@ -210,7 +210,7 @@ jobs:
           platforms="${{ steps.platforms_raw.outputs.value }}"
 
           # Split the platforms and add platform-specific tags
-          IFS=$'\n' read -ra PLATFORM_ARRAY <<< "$platforms"
+          IFS=',' read -ra PLATFORM_ARRAY <<< "$platforms"
           for PLATFORM in "${PLATFORM_ARRAY[@]}"; do
             TAGS+=("-t ${{ env.REGISTRY_IMAGE }}/${PLATFORM}:${{ needs.information.outputs.version }}")
             TAGS+=("-t ${{ env.REGISTRY_IMAGE }}/${PLATFORM}:${{ needs.information.outputs.environment }}")
