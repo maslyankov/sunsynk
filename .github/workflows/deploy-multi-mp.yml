@@ -120,7 +120,7 @@ jobs:
       - name: Prepare sanitized platform name
         id: sanitize-platform
         run: |
-          SANITIZED_PLATFORM=$(echo ${{ matrix.platform }} | sed 's/^linux\///')
+          SANITIZED_PLATFORM=$(echo ${{ matrix.platform }} | sed 's/^linux\///; s/\///g')
           echo "SANITIZED_PLATFORM=${SANITIZED_PLATFORM}" >> $GITHUB_ENV
           echo "Sanitized platform name: ${SANITIZED_PLATFORM}"
 
