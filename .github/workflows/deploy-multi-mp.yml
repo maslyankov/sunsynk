@@ -196,7 +196,8 @@ jobs:
         id: platforms_raw
         run: |
           ls outputs
-          echo "value=$(paste -sd ',' outputs/*.txt)" >> "$GITHUB_OUTPUT"
+          # Replace newlines with commas, then remove the trailing comma
+          echo "value=$(cat outputs/*.txt | tr '\n' ',' | sed 's/,$//')" >> "$GITHUB_OUTPUT"
 
       - name: Generate tags for multi-platform image
         run: |
