@@ -84,7 +84,7 @@ total_pv_energy
 
 :::
 
-### Power flow card: `power_flow_card`
+### Power Flow Card
 
 These are all sensors used by the [Power Flow Card](../examples/lovelace#sunsynk-power-flow-card)
 
@@ -97,10 +97,12 @@ SENSORS:
 
 ```yaml
 aux_power
+battery_1_soc  # 3PH HV
+battery_1_voltage  # 3PH HV
 battery_current
 battery_power
-battery_soc
-battery_voltage
+battery_soc  # 1PH & 3PH LV
+battery_voltage  # 1PH & 3PH LV
 day_battery_charge
 day_battery_discharge
 day_grid_export
@@ -110,18 +112,40 @@ day_pv_energy
 essential_power
 grid_connected
 grid_ct_power
+grid_current
 grid_frequency
+grid_l1_power  # 3PH LV & HV
+grid_l2_power  # 3PH LV & HV
+grid_l3_power  # 3PH LV & HV
 grid_power
 grid_voltage
 inverter_current
 inverter_power
+inverter_voltage
 load_frequency
+load_power
+load_l1_power
+load_l2_power
+load_l3_power
+load_l1_voltage
+load_l2_voltage
+load_l3_voltage
 non_essential_power
 overall_state
 priority_load
+pv_power
 pv1_current
 pv1_power
 pv1_voltage
+pv2_current
+pv2_power
+pv2_voltage
+pv3_current
+pv3_power
+pv3_voltage
+pv4_current
+pv4_power
+pv4_voltage
 use_timer
 ```
 
@@ -229,6 +253,9 @@ SENSORS:
 ::: details Sensors included
 
 ```yaml
+inverter_l1_power
+inverter_l2_power
+inverter_l3_power
 grid_voltage
 grid_l1_voltage
 grid_l2_voltage
