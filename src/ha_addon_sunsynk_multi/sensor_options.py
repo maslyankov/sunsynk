@@ -197,6 +197,7 @@ SENSOR_GROUPS: dict[str, list[str]] = {
         "grid_l3_power",  # 3PH LV & HV
         "grid_power",
         "grid_voltage",
+        "grid_current",
         "inverter_current",
         "inverter_power",
         "inverter_voltage",
