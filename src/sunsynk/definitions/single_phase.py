@@ -27,7 +27,9 @@ SENSORS: SensorDefinitions = SensorDefinitions()
 # Battery
 ##########
 SENSORS += (
-    TempSensor(182, "Battery temperature", CELSIUS, 0.1, offset=1000),
+    # Changed offset to 0 to match the temperature of the Deye inverter, regardless of
+    # the offset in the docs as per https://github.com/kellerza/sunsynk/issues/353
+    TempSensor(182, "Battery temperature", CELSIUS, 0.1, offset=0),
     Sensor(183, "Battery voltage", VOLT, 0.01),
     Sensor(184, "Battery SOC", "%"),
     Sensor(190, "Battery power", WATT, -1),
