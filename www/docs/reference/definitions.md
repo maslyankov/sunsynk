@@ -254,6 +254,40 @@ parallel_communication_quality_warning
 
 :::
 
+### Battery
+
+Sensors used for battery configuration and management.
+
+```yaml
+SENSORS:
+  - battery
+```
+
+::: details Sensors included
+
+```yaml
+battery_type
+battery_capacity_current
+battery_max_charge_current
+battery_max_discharge_current
+battery_shutdown_capacity
+battery_restart_capacity
+battery_low_capacity
+battery_equalization_voltage
+battery_absorption_voltage
+battery_float_voltage
+battery_shutdown_voltage
+battery_low_voltage
+battery_restart_voltage
+battery_wake_up
+battery_resistance
+battery_charge_efficiency
+battery_equalization_days
+battery_equalization_hours
+```
+
+:::
+
 ### My Sensors
 
 You can create custom sensors by defining them in a file called `mysensors.py` in the `/share/hass-addon-sunsynk/` directory. This allows you to add sensors that are not included in the default definitions.
