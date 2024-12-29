@@ -66,13 +66,16 @@ class SensorOptions(dict[Sensor, SensorOption]):
         # Add to startup set regardless of visibility
         self.startup.add(sensor)
 
+        # Check if sensor is explicitly included in any group
+        is_in_group = any(sensor.name in group for group in SENSOR_GROUPS.values())
+
         # Only add to SOPT if it's explicitly requested (visible) or a direct dependency
-        if visible or len(path) <= 2:  # Original sensor or direct dependency
+        if visible or len(path) <= 2 or is_in_group:  # Original sensor or direct dependency or in group
             if sensor not in self:
                 self[sensor] = SensorOption(
                     sensor=sensor,
                     schedule=get_schedule(sensor, SCHEDULES),
-                    visible=visible,
+                    visible=visible or is_in_group,  # Make visible if in group
                 )
 
         if isinstance(sensor, RWSensor):
@@ -185,11 +188,15 @@ SENSOR_GROUPS: dict[str, list[str]] = {
         "grid_voltage",
         "inverter_current",
         "inverter_power",
+        "inverter_voltage",
         "load_frequency",
         "load_power",
         "load_l1_power",
         "load_l2_power",
         "load_l3_power",
+        "load_l1_voltage",
+        "load_l2_voltage",
+        "load_l3_voltage",
         "non_essential_power",
         "overall_state",
         "priority_load",
@@ -200,6 +207,12 @@ SENSOR_GROUPS: dict[str, list[str]] = {
         "pv2_current",
         "pv2_power",
         "pv2_voltage",
+        "pv3_current",
+        "pv3_power",
+        "pv3_voltage",
+        "pv4_current",
+        "pv4_power",
+        "pv4_voltage",
         "use_timer",
     ],
     "settings": [
@@ -263,6 +276,9 @@ SENSOR_GROUPS: dict[str, list[str]] = {
         "gen_signal_on",
     ],
     "diagnostics": [
+        "inverter_l1_power",
+        "inverter_l2_power",
+        "inverter_l3_power",
         "grid_voltage",
         "grid_l1_voltage",
         "grid_l2_voltage",
@@ -284,6 +300,26 @@ SENSOR_GROUPS: dict[str, list[str]] = {
         "grid_phase_warning",
         "lithium_battery_loss_warning",
         "parallel_communication_quality_warning",
+    ],
+    "battery": [
+        "battery_type",
+        "battery_capacity_current",
+        "battery_max_charge_current",
+        "battery_max_discharge_current",
+        "battery_shutdown_capacity",
+        "battery_restart_capacity",
+        "battery_low_capacity",
+        "battery_equalization_voltage",
+        "battery_absorption_voltage",
+        "battery_float_voltage",
+        "battery_shutdown_voltage",
+        "battery_low_voltage",
+        "battery_restart_voltage",
+        "battery_wake_up",
+        "battery_resistance",
+        "battery_charge_efficiency",
+        "battery_equalization_days",
+        "battery_equalization_hours",
     ],
 }
 
