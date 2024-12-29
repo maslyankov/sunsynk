@@ -68,7 +68,11 @@ class SensorOptions(dict[Sensor, SensorOption]):
 
         # Check if sensor is explicitly included in any group using slugified names
         sensor_slug = slug(sensor.name)
-        is_in_group = any(slug(name) == sensor_slug for group in SENSOR_GROUPS.values() for name in group)
+        is_in_group = any(
+            slug(name) == sensor_slug
+            for group in SENSOR_GROUPS.values()
+            for name in group
+        )
 
         # Only add to SOPT if it's explicitly requested (visible) or a direct dependency
         if visible or len(path) <= 2 or is_in_group:  # Original sensor or direct dependency or in group
@@ -82,7 +86,11 @@ class SensorOptions(dict[Sensor, SensorOption]):
         if isinstance(sensor, RWSensor):
             for dep in sensor.dependencies:
                 # Pass visibility if the dependency is also in a group
-                dep_visible = visible or any(slug(name) == slug(dep.name) for group in SENSOR_GROUPS.values() for name in group)
+                dep_visible = visible or any(
+                    slug(name) == slug(dep.name)
+                    for group in SENSOR_GROUPS.values()
+                    for name in group
+                )
                 self._add_sensor_with_deps(dep, visible=dep_visible, path=path.copy())
                 if dep in self and sensor in self:  # Only track affects if both sensors are in SOPT
                     self[dep].affects.add(sensor)
