@@ -36,3 +36,23 @@ Below an example of the HomeAssistant Energy management dashboard using sensors 
 [![codecov](https://codecov.io/gh/kellerza/sunsynk/branch/main/graph/badge.svg?token=ILKRC5UTXI)](https://codecov.io/gh/kellerza/sunsynk)
 
 The Python library is available through pip: `pip install sunsynk`
+
+## Special Thanks
+
+Special thanks to [Johann Kellerman (kellerza)](https://github.com/kellerza) for creating and maintaining the original Sunsynk library and Home Assistant integration. His work laid the foundation for this project and has been instrumental in helping many users monitor and control their Deye/Sunsynk inverters.
+
+Thanks also to all the contributors who have helped improve this project through:
+- Code contributions
+- Bug reports and testing
+- Documentation improvements
+- Hardware compatibility testing
+- Community support and knowledge sharing
+
+Your contributions have helped make this project better for everyone in the community.
+
+For a complete list of contributors, please see the [GitHub contributors page](https://github.com/maslyankov/sunsynk/graphs/contributors).
+
+## License
+
+Apache 2.0 | Copyright © 2021-2025
+
