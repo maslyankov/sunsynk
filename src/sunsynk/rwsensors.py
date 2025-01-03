@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Callable, Generator
+from typing import Any, Callable, Generator, cast
 
 import attrs
 from mqtt_entity.utils import BOOL_OFF, BOOL_ON
@@ -20,8 +20,8 @@ ResolveType = Callable[[Sensor, ValType], ValType] | None
 class RWSensor(Sensor[SensorType]):
     """Read & write sensor."""
 
-    min: SensorType | NumType = 0
-    max: SensorType | NumType = 0xFFFF
+    min: Sensor[Any] | NumType = 0
+    max: Sensor[Any] | NumType = 0xFFFF
 
     def reg(self, *regs: int, msg: str = "") -> RegType:
         """Check the registers are within the bitmask."""
@@ -57,9 +57,9 @@ class RWSensor(Sensor[SensorType]):
         """Dependencies."""
         deps: list[SensorType] = []
         if isinstance(self.min, Sensor):
-            deps.append(self.min)
+            deps.append(cast(SensorType, self.min))
         if isinstance(self.max, Sensor):
-            deps.append(self.max)
+            deps.append(cast(SensorType, self.max))
         return deps
 
 
