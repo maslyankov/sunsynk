@@ -1,6 +1,7 @@
 """Sensor classes represent modbus registers for an inverter."""
 
 from __future__ import annotations
+from typing import TypeVar
 
 import logging
 
@@ -17,6 +18,8 @@ from sunsynk.helpers import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+SensorType = TypeVar("SensorType", bound="Sensor")
 
 
 @attrs.define(slots=True, eq=False)
@@ -64,16 +67,18 @@ class Sensor:
         return regs
 
     @property
-    def dependencies(self) -> list[str]:
-        """Return list of dependency sensor IDs."""
-        if self.zero_export_absolute:
-            return ["load_limit"]
+    def dependencies(self) -> list[SensorType]:
+        """Return list of dependency sensors."""
         return []
 
     def update_dependencies(self, sensors: dict[str, ValType]) -> None:
         """Update dependency values."""
         if self.zero_export_absolute:
-            self._load_limit = sensors.get("load_limit")
+            load_limit = sensors.get("load_limit")
+            if isinstance(load_limit, (int, float)):
+                self._load_limit = int(load_limit)
+            else:
+                self._load_limit = None
 
     def __hash__(self) -> int:
         """Hash the sensor id."""
