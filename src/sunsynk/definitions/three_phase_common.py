@@ -302,8 +302,8 @@ SENSORS += (
         141,
         "Passive Grid Balance",
         options={
-            0b10 << 2: "Close",
-            0b11 << 2: "Open",
+            0b10 << 2: "Disabled",
+            0b11 << 2: "Enabled",
         },
         bitmask=0b11 << 2,
     ),
@@ -311,8 +311,8 @@ SENSORS += (
         141,
         "Active Grid Balance",
         options={
-            0b10 << 4: "Close",
-            0b11 << 4: "Open",
+            0b10 << 4: "Disabled",
+            0b11 << 4: "Enabled",
         },
         bitmask=0b11 << 4,
     ),
