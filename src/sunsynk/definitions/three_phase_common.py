@@ -218,11 +218,13 @@ SENSORS += (
         options={0: "Use Battery Voltage", 1: "Lithium (Use BMS)", 2: "No Battery"},
     ),
     SelectRWSensor(
+        # according to docs, 0 is enabled for this one, but reported to be wrong:
+        # https://github.com/kellerza/sunsynk/issues/381#issuecomment-2568995917
         112,
         "Battery Wake Up",
-        options={0: "Enabled", 1 << 0: "Disabled"},
+        options={0: "Disabled", 1 << 0: "Enabled"},
         bitmask=1 << 0,
-    ),  # according to docs, 0 is enabled for this one
+    ),
     NumberRWSensor(113, "Battery Resistance", "mΩ", max=6000),
     Sensor(114, "Battery Charge Efficiency", "%", 0.1),
     SelectRWSensor(
