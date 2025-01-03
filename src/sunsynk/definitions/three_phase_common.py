@@ -41,10 +41,10 @@ SENSORS += (
 #############
 SENSORS += (
     Sensor(609, "Grid frequency", "Hz", 0.01),
-    Sensor(625, "Grid power", WATT, -1),  # gridTotalPac
-    Sensor(622, "Grid L1 power", WATT, -1),  # aPower
-    Sensor(623, "Grid L2 power", WATT, -1),  # bPower
-    Sensor(624, "Grid L3 power", WATT, -1),  # cPower
+    Sensor(625, "Grid power", WATT, -1, zero_export_absolute=True),  # gridTotalPac
+    Sensor(622, "Grid L1 power", WATT, -1, zero_export_absolute=True),  # aPower
+    Sensor(623, "Grid L2 power", WATT, -1, zero_export_absolute=True),  # bPower
+    Sensor(624, "Grid L3 power", WATT, -1, zero_export_absolute=True),  # cPower
     Sensor(598, "Grid L1 voltage", VOLT, 0.1),  # aLineVolt
     Sensor(599, "Grid L2 voltage", VOLT, 0.1),  # bLineVolt
     Sensor(600, "Grid L3 voltage", VOLT, 0.1),  # cLineVolt
@@ -66,10 +66,10 @@ SENSORS += (
 # Load Power
 #############
 SENSORS += (
-    Sensor(653, "Load power", WATT, -1),
-    Sensor(650, "Load L1 power", WATT, -1),
-    Sensor(651, "Load L2 power", WATT, -1),
-    Sensor(652, "Load L3 power", WATT, -1),
+    Sensor(653, "Load power", WATT, -1, absolute=True),  # loadTotalPac
+    Sensor(650, "Load L1 power", WATT, -1, absolute=True),  # aLoadPower
+    Sensor(651, "Load L2 power", WATT, -1, absolute=True),  # bLoadPower
+    Sensor(652, "Load L3 power", WATT, -1, absolute=True),  # cLoadPower
     Sensor(644, "Load L1 voltage", VOLT, 0.1),
     Sensor(645, "Load L2 voltage", VOLT, 0.1),
     Sensor(646, "Load L3 voltage", VOLT, 0.1),

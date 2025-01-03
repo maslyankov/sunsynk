@@ -1,6 +1,7 @@
 """Sensor classes represent modbus registers for an inverter."""
 
 from __future__ import annotations
+from typing import TypeVar, Generic
 
 import logging
 
@@ -18,9 +19,11 @@ from sunsynk.helpers import (
 
 _LOGGER = logging.getLogger(__name__)
 
+SensorType = TypeVar('SensorType', bound='Sensor')
+
 
 @attrs.define(slots=True, eq=False)
-class Sensor:
+class Sensor(Generic[SensorType]):
     """Sunsynk sensor."""
 
     # pylint: disable=too-many-instance-attributes
@@ -29,6 +32,9 @@ class Sensor:
     unit: str = ""
     factor: float = 1
     bitmask: int = 0
+    absolute: bool = False
+    zero_export_absolute: bool = False
+    _load_limit: int | None = attrs.field(default=None, init=False)
 
     @property
     def id(self) -> str:
@@ -44,6 +50,13 @@ class Sensor:
         if self.factor < 0:  # Indicates this register is signed
             val = signed(val, bits=16 * len(regs))
         val = int_round(val * abs(self.factor))
+        
+        if self.absolute and val < 0:
+            val = -val
+        if self.zero_export_absolute and self._load_limit == 2:  # 2 = Zero Export
+            if val < 0:
+                val = -val
+        
         _LOGGER.debug("%s=%s%s %s", self.id, val, self.unit, regs)
         return val
 
@@ -52,6 +65,20 @@ class Sensor:
         if self.bitmask:
             return tuple(r & self.bitmask for r in regs)
         return regs
+
+    @property
+    def dependencies(self) -> list[SensorType]:
+        """Return list of dependency sensors."""
+        return []
+
+    def update_dependencies(self, sensors: dict[str, ValType]) -> None:
+        """Update dependency values."""
+        if self.zero_export_absolute:
+            load_limit = sensors.get("load_limit")
+            if isinstance(load_limit, (int, float)):
+                self._load_limit = int(load_limit)
+            else:
+                self._load_limit = None
 
     def __hash__(self) -> int:
         """Hash the sensor id."""
