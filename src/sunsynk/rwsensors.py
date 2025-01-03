@@ -17,7 +17,7 @@ ResolveType = Callable[[Sensor, ValType], ValType] | None
 
 
 @attrs.define(slots=True, eq=False)
-class RWSensor(Sensor):
+class RWSensor(Sensor[SensorType]):
     """Read & write sensor."""
 
     min: SensorType | NumType = 0

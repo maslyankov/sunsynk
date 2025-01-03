@@ -1,7 +1,7 @@
 """Sensor classes represent modbus registers for an inverter."""
 
 from __future__ import annotations
-from typing import TypeVar
+from typing import TypeVar, Generic
 
 import logging
 
@@ -19,11 +19,11 @@ from sunsynk.helpers import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SensorType = TypeVar("SensorType", bound="Sensor")
+SensorType = TypeVar('SensorType', bound='Sensor')
 
 
 @attrs.define(slots=True, eq=False)
-class Sensor:
+class Sensor(Generic[SensorType]):
     """Sunsynk sensor."""
 
     # pylint: disable=too-many-instance-attributes
