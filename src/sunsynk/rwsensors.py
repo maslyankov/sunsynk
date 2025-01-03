@@ -10,7 +10,7 @@ import attrs
 from mqtt_entity.utils import BOOL_OFF, BOOL_ON
 
 from sunsynk.helpers import NumType, RegType, SSTime, ValType, as_num, hex_str
-from sunsynk.sensors import Sensor
+from sunsynk.sensors import Sensor, SensorType
 
 _LOGGER = logging.getLogger(__name__)
 ResolveType = Callable[[Sensor, ValType], ValType] | None
@@ -19,6 +19,9 @@ ResolveType = Callable[[Sensor, ValType], ValType] | None
 @attrs.define(slots=True, eq=False)
 class RWSensor(Sensor):
     """Read & write sensor."""
+
+    min: SensorType | NumType = 0
+    max: SensorType | NumType = 0xFFFF
 
     def reg(self, *regs: int, msg: str = "") -> RegType:
         """Check the registers are within the bitmask."""
@@ -50,9 +53,14 @@ class RWSensor(Sensor):
             )
 
     @property
-    def dependencies(self) -> list[Sensor]:
+    def dependencies(self) -> list[SensorType]:
         """Dependencies."""
-        return []
+        deps: list[SensorType] = []
+        if isinstance(self.min, Sensor):
+            deps.append(self.min)
+        if isinstance(self.max, Sensor):
+            deps.append(self.max)
+        return deps
 
 
 @attrs.define(slots=True, eq=False)
