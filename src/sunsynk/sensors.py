@@ -30,7 +30,8 @@ class Sensor:
     factor: float = 1
     bitmask: int = 0
     absolute: bool = False
-    zero_export_absolute: bool = False  # New parameter to force positive values in zero export mode
+    zero_export_absolute: bool = False
+    _load_limit: int | None = attrs.field(default=None, init=False)
 
     @property
     def id(self) -> str:
@@ -68,9 +69,8 @@ class Sensor:
     def dependencies(self) -> list[Sensor]:
         """Dependencies."""
         if self.zero_export_absolute:
-            # Find and return the Load Limit sensor
             from sunsynk.definitions.three_phase_common import SENSORS
-            load_limit = next((s for s in SENSORS.all if s.name == "Load Limit"), None)
+            load_limit = next((s for s in SENSORS.all if isinstance(s, Sensor) and s.name == "Load Limit"), None)
             return [load_limit] if load_limit else []
         return []
 
