@@ -48,11 +48,9 @@ class Sensor:
             val = signed(val, bits=16 * len(regs))
         val = int_round(val * abs(self.factor))
         
-        # Handle absolute values
         if self.absolute and val < 0:
             val = -val
-        # Handle zero export mode
-        if self.zero_export_absolute and hasattr(self, '_load_limit') and getattr(self, '_load_limit') == 2:  # 2 = Zero Export
+        if self.zero_export_absolute and self._load_limit == 2:  # 2 = Zero Export
             if val < 0:
                 val = -val
         
@@ -66,12 +64,10 @@ class Sensor:
         return regs
 
     @property
-    def dependencies(self) -> list[Sensor]:
-        """Dependencies."""
+    def dependencies(self) -> list[str]:
+        """Return list of dependency sensor IDs."""
         if self.zero_export_absolute:
-            from sunsynk.definitions.three_phase_common import SENSORS
-            load_limit = next((s for s in SENSORS.all if isinstance(s, Sensor) and s.name == "Load Limit"), None)
-            return [load_limit] if load_limit else []
+            return ["load_limit"]
         return []
 
     def update_dependencies(self, sensors: dict[str, ValType]) -> None:
