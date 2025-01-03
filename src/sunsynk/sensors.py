@@ -29,6 +29,8 @@ class Sensor:
     unit: str = ""
     factor: float = 1
     bitmask: int = 0
+    absolute: bool = False
+    zero_export_absolute: bool = False  # New parameter to force positive values in zero export mode
 
     @property
     def id(self) -> str:
@@ -44,6 +46,15 @@ class Sensor:
         if self.factor < 0:  # Indicates this register is signed
             val = signed(val, bits=16 * len(regs))
         val = int_round(val * abs(self.factor))
+        
+        # Handle absolute values
+        if self.absolute and val < 0:
+            val = -val
+        # Handle zero export mode
+        if self.zero_export_absolute and hasattr(self, '_load_limit') and getattr(self, '_load_limit') == 2:  # 2 = Zero Export
+            if val < 0:
+                val = -val
+        
         _LOGGER.debug("%s=%s%s %s", self.id, val, self.unit, regs)
         return val
 
@@ -52,6 +63,21 @@ class Sensor:
         if self.bitmask:
             return tuple(r & self.bitmask for r in regs)
         return regs
+
+    @property
+    def dependencies(self) -> list[Sensor]:
+        """Dependencies."""
+        if self.zero_export_absolute:
+            # Find and return the Load Limit sensor
+            from sunsynk.definitions.three_phase_common import SENSORS
+            load_limit = next((s for s in SENSORS.all if s.name == "Load Limit"), None)
+            return [load_limit] if load_limit else []
+        return []
+
+    def update_dependencies(self, sensors: dict[str, ValType]) -> None:
+        """Update dependency values."""
+        if self.zero_export_absolute:
+            self._load_limit = sensors.get("load_limit")
 
     def __hash__(self) -> int:
         """Hash the sensor id."""
