@@ -288,7 +288,35 @@ SENSORS += (
 # System program
 #################
 
-SENSORS += SwitchRWSensor(141, "Priority Load")
+SENSORS += (
+    SelectRWSensor(
+        141,
+        "Priority Load",
+        options={
+            0b10 << 0: "Battery First",
+            0b11 << 0: "Load First",
+        },
+        bitmask=0b11 << 0,
+    ),
+    SelectRWSensor(
+        141,
+        "Passive Grid Balance",
+        options={
+            0b10 << 2: "Close",
+            0b11 << 2: "Open",
+        },
+        bitmask=0b11 << 2,
+    ),
+    SelectRWSensor(
+        141,
+        "Active Grid Balance",
+        options={
+            0b10 << 4: "Close",
+            0b11 << 4: "Open",
+        },
+        bitmask=0b11 << 4,
+    ),
+)
 
 SENSORS += SelectRWSensor(
     142,
