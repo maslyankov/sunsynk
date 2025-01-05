@@ -32,7 +32,12 @@ SENSORS += (
     Sensor(633, "Inverter L1 power", WATT, -1),
     Sensor(634, "Inverter L2 power", WATT, -1),
     Sensor(635, "Inverter L3 power", WATT, -1),
-    Sensor(627, "Inverter voltage", VOLT, 0.1),
+    Sensor(627, "Inverter L1 voltage", VOLT, 0.1),
+    Sensor(628, "Inverter L2 voltage", VOLT, 0.1),
+    Sensor(629, "Inverter L3 voltage", VOLT, 0.1),
+    Sensor(630, "Inverter L1 current", AMPS, -0.01),
+    Sensor(631, "Inverter L2 current", AMPS, -0.01),
+    Sensor(632, "Inverter L3 current", AMPS, -0.01),
     Sensor(638, "Inverter frequency", "Hz", 0.01),
 )
 
@@ -73,6 +78,22 @@ SENSORS += (
     Sensor(644, "Load L1 voltage", VOLT, 0.1),
     Sensor(645, "Load L2 voltage", VOLT, 0.1),
     Sensor(646, "Load L3 voltage", VOLT, 0.1),
+)
+
+##############
+# Gen Power
+##############
+SENSORS += (
+    Sensor(667, "Gen power", WATT, 1),
+    Sensor(664, "Gen L1 power", WATT, 1),
+    Sensor(665, "Gen L2 power", WATT, 1),
+    Sensor(666, "Gen L3 power", WATT, 1),
+    Sensor(661, "Gen L1 voltage", VOLT, 0.1),
+    Sensor(662, "Gen L2 voltage", VOLT, 0.1),
+    Sensor(663, "Gen L3 voltage", VOLT, 0.1),
+    Sensor(671, "Gen L1 current", AMPS, -0.01),
+    Sensor(672, "Gen L2 current", AMPS, -0.01),
+    Sensor(673, "Gen L3 current", AMPS, -0.01),
 )
 
 ##############
@@ -218,11 +239,13 @@ SENSORS += (
         options={0: "Use Battery Voltage", 1: "Lithium (Use BMS)", 2: "No Battery"},
     ),
     SelectRWSensor(
+        # according to docs, 0 is enabled for this one, but reported to be wrong:
+        # https://github.com/kellerza/sunsynk/issues/381#issuecomment-2568995917
         112,
         "Battery Wake Up",
-        options={0: "Enabled", 1 << 0: "Disabled"},
+        options={0: "Disabled", 1 << 0: "Enabled"},
         bitmask=1 << 0,
-    ),  # according to docs, 0 is enabled for this one
+    ),
     NumberRWSensor(113, "Battery Resistance", "mΩ", max=6000),
     Sensor(114, "Battery Charge Efficiency", "%", 0.1),
     SelectRWSensor(
@@ -286,7 +309,35 @@ SENSORS += (
 # System program
 #################
 
-SENSORS += SwitchRWSensor(141, "Priority Load")
+SENSORS += (
+    SelectRWSensor(
+        141,
+        "Priority Load",
+        options={
+            0b10 << 0: "Battery First",
+            0b11 << 0: "Load First",
+        },
+        bitmask=0b11 << 0,
+    ),
+    SelectRWSensor(
+        141,
+        "Passive Grid Balance",
+        options={
+            0b10 << 2: "Disabled",
+            0b11 << 2: "Enabled",
+        },
+        bitmask=0b11 << 2,
+    ),
+    SelectRWSensor(
+        141,
+        "Active Grid Balance",
+        options={
+            0b10 << 4: "Disabled",
+            0b11 << 4: "Enabled",
+        },
+        bitmask=0b11 << 4,
+    ),
+)
 
 SENSORS += SelectRWSensor(
     142,
