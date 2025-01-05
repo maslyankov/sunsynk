@@ -81,6 +81,22 @@ SENSORS += (
 )
 
 ##############
+# Gen Power
+##############
+SENSORS += (
+    Sensor(667, "Gen power", WATT, 1),
+    Sensor(664, "Gen L1 power", WATT, 1),
+    Sensor(665, "Gen L2 power", WATT, 1),
+    Sensor(666, "Gen L3 power", WATT, 1),
+    Sensor(661, "Gen L1 voltage", VOLT, 0.1),
+    Sensor(662, "Gen L2 voltage", VOLT, 0.1),
+    Sensor(663, "Gen L3 voltage", VOLT, 0.1),
+    Sensor(671, "Gen L1 current", AMPS, -0.01),
+    Sensor(672, "Gen L2 current", AMPS, -0.01),
+    Sensor(673, "Gen L3 current", AMPS, -0.01),
+)
+
+##############
 # Solar Power
 ##############
 SENSORS += (
