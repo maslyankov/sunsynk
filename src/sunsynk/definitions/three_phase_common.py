@@ -53,18 +53,21 @@ SENSORS += (
     Sensor(598, "Grid L1 voltage", VOLT, 0.1),  # aLineVolt
     Sensor(599, "Grid L2 voltage", VOLT, 0.1),  # bLineVolt
     Sensor(600, "Grid L3 voltage", VOLT, 0.1),  # cLineVolt
-    Sensor((604, 700), "A Phase Power on the Inner Side of the Grid", "W"),
-    Sensor((605, 701), "B Phase Power on the Inner Side of the Grid", "W"),
-    Sensor((606, 702), "C Phase Power on the Inner Side of the Grid", "W"),
-    Sensor((607, 703), "Total Active Power from Side to Side of the Grid", "W"),
-    Sensor((608, 704), "Grid Side - Inside Total Apparent Power", "W"),
+    Sensor((604, 700), "A Phase Power on the Inner Side of the Grid", "W", -1),
+    Sensor((605, 701), "B Phase Power on the Inner Side of the Grid", "W", -1),
+    Sensor((606, 702), "C Phase Power on the Inner Side of the Grid", "W", -1),
+    Sensor((607, 703), "Total Active Power from Side to Side of the Grid", "W", -1),
+    Sensor((608, 704), "Grid Side - Inside Total Apparent Power", "W", -1),
     MathSensor(
-        (610, 611, 612), "Grid current", AMPS, factors=(0.01, 0.01, 0.01)
+        (610, 611, 612), "Grid current", AMPS, factors=(-0.01, -0.01, -0.01)
     ),  # iac1,iac2,iac3
     Sensor((616, 705), "Grid CT L1 power", WATT, -1),  # aPower
     Sensor((617, 706), "Grid CT L2 power", WATT, -1),  # bPower
     Sensor((618, 707), "Grid CT L3 power", WATT, -1),  # cPower
     Sensor((619, 708), "Grid CT power", WATT, -1),  # totalPower
+    MathSensor(
+        (613, 614, 615), "Grid CT current", AMPS, factors=(-0.01, -0.01, -0.01)
+    ),  # iac1,iac2,iac3
 )
 
 #############
