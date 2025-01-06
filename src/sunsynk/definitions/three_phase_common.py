@@ -71,10 +71,10 @@ SENSORS += (
 # Load Power
 #############
 SENSORS += (
-    Sensor((653, 659), "Load power", WATT, -1),
     Sensor((650, 656), "Load L1 power", WATT, -1),
     Sensor((651, 657), "Load L2 power", WATT, -1),
     Sensor((652, 658), "Load L3 power", WATT, -1),
+    Sensor((653, 659), "Load power", WATT, -1),
     Sensor(644, "Load L1 voltage", VOLT, 0.1),
     Sensor(645, "Load L2 voltage", VOLT, 0.1),
     Sensor(646, "Load L3 voltage", VOLT, 0.1),
