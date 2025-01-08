@@ -304,28 +304,9 @@ SENSORS += (
         141,
         "Priority Load",
         options={
-            0b10 << 0: "Battery First",
-            0b11 << 0: "Load First",
+            0: "Battery First",
+            1: "Load First",
         },
-        bitmask=0b11 << 0,
-    ),
-    SelectRWSensor(
-        141,
-        "Passive Grid Balance",
-        options={
-            0b10 << 2: "Disabled",
-            0b11 << 2: "Enabled",
-        },
-        bitmask=0b11 << 2,
-    ),
-    SelectRWSensor(
-        141,
-        "Active Grid Balance",
-        options={
-            0b10 << 4: "Disabled",
-            0b11 << 4: "Enabled",
-        },
-        bitmask=0b11 << 4,
     ),
 )
 
