@@ -1,6 +1,6 @@
 ---
 name: Sunsynk/Deye Inverter Add-on (edge/dev)
-version: "ded4958"
+version: "78585cf"
 image: ghcr.io/maslyankov/hass-addon-sunsynk-multi
 slug: hass-addon-sunsynk-edge
 description: Add-on for a Sunsynk/Deye branded Inverter
