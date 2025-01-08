@@ -551,6 +551,14 @@ SENSORS += (  ### no idea why there is a "no work" option, but it's in the spec
         },
         bitmask=0b11 << 14,
     ),
+    SelectRWSensor(
+        235,
+        "Track Grid Phase",
+        options={
+            0: "Disable",
+            1: "Enable",
+        },
+    ),
     NumberRWSensor(209, "UPS delay time", "s"),
 )
 ############
