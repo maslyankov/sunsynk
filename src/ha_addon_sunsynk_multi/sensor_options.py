@@ -273,6 +273,7 @@ SENSOR_GROUPS: dict[str, list[str]] = {
         "grid_standard",
         "configured_grid_frequency",
         "configured_grid_phases",
+        "track_grid_phase",
         "ups_delay_time",
     ],
     "generator": [
