@@ -54,7 +54,8 @@ class InverterOptions:
         if self.connector and self.port:
             _LOG.warning(
                 "%s: Both connector and port specified. Using connector: %s",
-                self.serial_nr, self.connector
+                self.serial_nr,
+                self.connector,
             )
         # Legacy port handling
         if not self.connector:
