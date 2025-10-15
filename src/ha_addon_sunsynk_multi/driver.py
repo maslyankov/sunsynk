@@ -49,7 +49,7 @@ def sensor_on_update(sen: Sensor, _new: ValType, _old: ValType) -> None:
 def init_driver(opt: Options) -> None:
     """Init Sunsynk driver for each inverter."""
     STATE.clear()
-    
+
     # Initialize connector manager for shared connections
     connector_manager = ConnectorManager()
 
@@ -57,13 +57,19 @@ def init_driver(opt: Options) -> None:
         if inv.connector:
             # Use shared connector
             connector = connector_manager.get_connector(inv.connector)
-            suns: Sunsynk = InverterWrapper(connector=connector, server_id=inv.modbus_id)
-            _LOG.info("Using shared connector '%s' for inverter %s", inv.connector, inv.serial_nr)
+            suns: Sunsynk = InverterWrapper(
+                connector=connector, server_id=inv.modbus_id
+            )
+            _LOG.info(
+                "Using shared connector '%s' for inverter %s",
+                inv.connector,
+                inv.serial_nr,
+            )
         else:
             # Legacy: direct port connection
             suns = _create_legacy_connection(inv, opt)
             _LOG.info("Using direct port connection for inverter %s", inv.serial_nr)
-        
+
         suns.state.onchange = sensor_on_update
         STATE.append(AInverter(inv=suns, ss={}, opt=inv, index=idx))
 
@@ -98,9 +104,9 @@ def _create_legacy_connection(inv: InverterOptions, opt: Options) -> Sunsynk:
         read_sensors_batch_size=opt.read_sensors_batch_size,
         allow_gap=opt.read_allow_gap,
     )
-    
+
     if hasattr(suns, "dongle_serial_number"):
         suns.dongle_serial_number = inv.dongle_serial_number  # type: ignore[]
-    
+
     _LOG.debug("Legacy driver: %s - inv:%s", suns, inv)
     return suns
