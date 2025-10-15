@@ -82,13 +82,16 @@ def _create_legacy_connection(inv: InverterOptions, opt: Options) -> Sunsynk:
 
     if opt.driver == "pymodbus":
         from sunsynk.pysunsynk import PySunsynk  # noqa: PLC0415
+
         factory = PySunsynk
     elif opt.driver == "umodbus":
         from sunsynk.usunsynk import USunsynk  # noqa: PLC0415
+
         factory = USunsynk
         port_prefix = "serial://"
     elif opt.driver == "solarman":
         from sunsynk.solarmansunsynk import SolarmanSunsynk  # noqa: PLC0415
+
         factory = SolarmanSunsynk  # type: ignore[]
         port_prefix = "tcp://"
         kwargs["dongle_serial_number"] = 0
