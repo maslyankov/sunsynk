@@ -31,7 +31,7 @@ class ConnectorManager:
             if config.name == name:
                 conn_config = config
                 break
-        
+
         if not conn_config:
             raise ValueError(f"Connector '{name}' not found in configuration")
 
@@ -40,7 +40,7 @@ class ConnectorManager:
         # Create appropriate driver instance
         factory = self._get_driver_factory(conn_config.driver)
         port = self._build_port_string(conn_config)
-        
+
         suns = factory(
             port=port,
             server_id=1,  # Will be overridden by inverter-specific server_id
@@ -48,7 +48,7 @@ class ConnectorManager:
             read_sensors_batch_size=OPT.read_sensors_batch_size,
             allow_gap=OPT.read_allow_gap,
         )
-        
+
         # Set dongle serial for Solarman
         if hasattr(suns, "dongle_serial_number") and conn_config.dongle_serial:
             suns.dongle_serial_number = conn_config.dongle_serial
