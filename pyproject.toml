@@ -47,10 +47,10 @@ dev = [
 module-name = [ "sunsynk", "ha_addon_sunsynk_multi" ]
 
 [tool.ruff]
+target-version = "py311"
+line-length = 88
 include = [ "src/**/*.py" ]
-format.line-ending = "lf"
-format.docstring-code-format = true
-lint.select = [
+select = [
   "A",     # flake8-builtins
   "ASYNC", # flake8-async
   "B",     # bugbear
@@ -67,8 +67,8 @@ lint.select = [
   "UP",    # pyupgrade
   "W",     # pycodestyle
 ]
-lint.ignore = [ "D203", "D213", "E203", "E501", "PLR2004" ]
-lint.pylint.max-args = 7
+ignore = [ "D203", "D213", "E203", "E501", "PLR2004" ]
+fixable = [ "I" ]
 
 [tool.codespell]
 skip = "data,*.map,package-lock.json,*.map,**/cache/*,**/node_modules/*"

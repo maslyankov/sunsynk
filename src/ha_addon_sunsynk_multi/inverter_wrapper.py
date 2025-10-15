@@ -4,6 +4,7 @@ import logging
 from collections.abc import Iterable, Sequence
 
 import attrs
+
 from sunsynk.rwsensors import RWSensor
 from sunsynk.sensors import Sensor
 from sunsynk.sunsynk import Sunsynk, ValType
@@ -41,15 +42,11 @@ class InverterWrapper(Sunsynk):
         original_server_id = self.connector.server_id
         self.connector.server_id = self.server_id
         try:
-            return await self.connector.write_register(
-                address=address, value=value
-            )
+            return await self.connector.write_register(address=address, value=value)
         finally:
             self.connector.server_id = original_server_id
 
-    async def read_holding_registers(
-        self, start: int, length: int
-    ) -> Sequence[int]:
+    async def read_holding_registers(self, start: int, length: int) -> Sequence[int]:
         """Read holding registers using shared connector."""
         # Store original server_id and temporarily override
         original_server_id = self.connector.server_id
