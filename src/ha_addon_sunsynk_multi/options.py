@@ -49,30 +49,35 @@ class InverterOptions:
     def __attrs_post_init__(self) -> None:
         """Do some checks."""
         self.ha_prefix = self.ha_prefix.lower().strip()
-        
+
         # Validate connector vs port usage
         if self.connector and self.port:
             _LOG.warning(
-                "%s: Both connector and port specified. Using connector: %s", 
+                "%s: Both connector and port specified. Using connector: %s",
                 self.serial_nr, self.connector
             )
-        
         # Legacy port handling
         if not self.connector:
             if self.dongle_serial_number:
                 if self.port:
-                    _LOG.warning("%s: No port expected when you specify a serial number.")
+                    _LOG.warning(
+                        "%s: No port expected when you specify a serial number."
+                    )
                 return
             if self.port == "":
                 _LOG.warning(
-                    "%s: Using port from debug_device: %s", self.serial_nr, OPT.debug_device
+                    "%s: Using port from debug_device: %s",
+                    self.serial_nr,
+                    OPT.debug_device,
                 )
                 self.port = OPT.debug_device
             ddev = self.port == ""
             if ddev:
                 _LOG.warning("Empty port, will use the debug device")
             if ddev or self.port.lower().startswith(("serial:", "/dev")):
-                _LOG.warning("Use mbusd instead of connecting directly to a serial port")
+                _LOG.warning(
+                    "Use mbusd instead of connecting directly to a serial port"
+                )
 
 @attrs.define()
 class Options(MQTTOptions):
@@ -165,15 +170,18 @@ async def init_options() -> None:
         if inv.ha_prefix in all_prefix:
             raise ValueError("HA_PREFIX should be unique")
         all_prefix.add(inv.ha_prefix)
-    
+
     # check connector names are unique
     connector_names = set()
     for conn in OPT.connectors:
         if conn.name in connector_names:
             raise ValueError(f"Connector name '{conn.name}' should be unique")
         connector_names.add(conn.name)
-    
+
     # validate inverter connector references
     for inv in OPT.inverters:
         if inv.connector and inv.connector not in connector_names:
-            raise ValueError(f"Inverter '{inv.serial_nr}' references unknown connector '{inv.connector}'")
+            raise ValueError(
+                f"Inverter '{inv.serial_nr}' references unknown connector "
+                f"'{inv.connector}'"
+            )

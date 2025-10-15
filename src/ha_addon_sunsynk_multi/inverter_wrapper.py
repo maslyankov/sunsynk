@@ -17,7 +17,7 @@ class InverterWrapper(Sunsynk):
 
     connector: Sunsynk = attrs.field()
     """Shared connector instance."""
-    
+
     server_id: int = attrs.field()
     """Modbus server ID for this inverter."""
 

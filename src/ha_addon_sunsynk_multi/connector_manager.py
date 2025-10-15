@@ -1,7 +1,6 @@
 """Connector management for shared connections."""
 
 import logging
-from typing import Any
 
 import attrs
 from sunsynk.sunsynk import Sunsynk
