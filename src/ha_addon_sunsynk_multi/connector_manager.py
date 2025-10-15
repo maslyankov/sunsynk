@@ -4,9 +4,9 @@ import logging
 
 import attrs
 from sunsynk.pysunsynk import PySunsynk
-from sunsynk.usunsynk import USunsynk
 from sunsynk.solarmansunsynk import SolarmanSunsynk
 from sunsynk.sunsynk import Sunsynk
+from sunsynk.usunsynk import USunsynk
 
 from .options import OPT, ConnectorOptions
 

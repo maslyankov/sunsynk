@@ -6,7 +6,7 @@ from collections.abc import Iterable, Sequence
 import attrs
 from sunsynk.rwsensors import RWSensor
 from sunsynk.sensors import Sensor
-from sunsynk.sunsynk import ValType, Sunsynk
+from sunsynk.sunsynk import Sunsynk, ValType
 
 _LOG = logging.getLogger(__name__)
 
