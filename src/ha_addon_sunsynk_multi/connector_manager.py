@@ -3,6 +3,9 @@
 import logging
 
 import attrs
+from sunsynk.pysunsynk import PySunsynk
+from sunsynk.usunsynk import USunsynk
+from sunsynk.solarmansunsynk import SolarmanSunsynk
 from sunsynk.sunsynk import Sunsynk
 
 from .options import OPT, ConnectorOptions
@@ -58,13 +61,10 @@ class ConnectorManager:
     def _get_driver_factory(self, driver: str) -> type[Sunsynk]:
         """Get the appropriate driver factory."""
         if driver == "pymodbus":
-            from sunsynk.pysunsynk import PySunsynk
             return PySunsynk
         elif driver == "umodbus":
-            from sunsynk.usunsynk import USunsynk
             return USunsynk
         elif driver == "solarman":
-            from sunsynk.solarmansunsynk import SolarmanSunsynk
             return SolarmanSunsynk
         else:
             raise ValueError(f"Invalid driver: {driver}")
