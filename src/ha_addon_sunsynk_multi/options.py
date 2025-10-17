@@ -13,7 +13,10 @@ _LOG = logging.getLogger(__name__)
 
 def _convert_connectors(data: list) -> "list[ConnectorOptions]":
     """Convert list of dicts to list of ConnectorOptions."""
+    _LOG.debug("_convert_connectors called with: %s (type: %s)", data, type(data))
+
     if not isinstance(data, list):
+        _LOG.error("Expected list, got %s: %s", type(data), data)
         raise ValueError(f"Expected list, got {type(data)}")
 
     # Debug logging
@@ -150,6 +153,11 @@ class Options(MQTTOptions):
 
         # Handle connectors conversion
         if "connectors" in config:
+            _LOG.debug(
+                "Raw connectors data: %s (type: %s)",
+                config["connectors"],
+                type(config["connectors"]),
+            )
             config["connectors"] = _convert_connectors(config["connectors"])
 
         # Handle inverters conversion
