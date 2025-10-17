@@ -203,7 +203,12 @@ class Options(MQTTOptions):
         if "schedules" in config:
             config["schedules"] = _convert_schedules(config["schedules"])
 
-        # Use cattrs to structure the configuration, but exclude already-converted fields
+        # Set the complex fields directly first
+        for key in ("connectors", "inverters", "schedules"):
+            if key in config:
+                setattr(self, key.lower(), config[key])
+
+        # Use cattrs to structure the remaining configuration
         try:
             # Create a copy without the complex types for cattrs processing
             simple_config = {
@@ -211,20 +216,34 @@ class Options(MQTTOptions):
                 for k, v in config.items()
                 if k not in ("connectors", "inverters", "schedules")
             }
-            val = CONVERTER.structure(simple_config, self.__class__)
+
+            # Create a temporary class without the complex fields for cattrs
+            @attrs.define()
+            class SimpleOptions(MQTTOptions):
+                """Temporary options class without complex fields."""
+
+                number_entity_mode: str = "auto"
+                prog_time_interval: int = 15
+                sensor_definitions: str = "single-phase"
+                sensors: list[str] = attrs.field(factory=list)
+                sensors_first_inverter: list[str] = attrs.field(factory=list)
+                read_allow_gap: int = 2
+                read_sensors_batch_size: int = 20
+                timeout: int = 10
+                debug: int = 0
+                driver: str = "pymodbus"
+                manufacturer: str = "Sunsynk"
+                debug_device: str = ""
+
+            val = CONVERTER.structure(simple_config, SimpleOptions)
         except Exception as exc:
             msg = "Error loading config: " + "\n".join(transform_error(exc))
             _LOG.error(msg)
             raise ValueError(msg) from None
 
-        # Set attributes from the structured object
-        for key in config:
-            if key in ("connectors", "inverters", "schedules"):
-                # Use our pre-converted values
-                setattr(self, key.lower(), config[key])
-            else:
-                # Use cattrs-converted values
-                setattr(self, key.lower(), getattr(val, key.lower()))
+        # Set attributes from the structured object (excluding already set complex fields)
+        for key in simple_config:
+            setattr(self, key.lower(), getattr(val, key.lower()))
 
         # Handle sensor overrides
         if isinstance(self.sensor_overrides, list):
