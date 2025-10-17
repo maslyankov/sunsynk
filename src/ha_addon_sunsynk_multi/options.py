@@ -3,11 +3,33 @@
 import logging
 
 import attrs
-from mqtt_entity.options import MQTTOptions
+import cattrs
+from mqtt_entity.options import CONVERTER, MQTTOptions, transform_error
 
 from .timer_schedule import Schedule
 
 _LOG = logging.getLogger(__name__)
+
+
+def _convert_connectors(data: list) -> "list[ConnectorOptions]":
+    """Convert list of dicts to list of ConnectorOptions."""
+    if not isinstance(data, list):
+        raise ValueError(f"Expected list, got {type(data)}")
+    return [cattrs.structure(item, ConnectorOptions) for item in data]
+
+
+def _convert_inverters(data: list) -> "list[InverterOptions]":
+    """Convert list of dicts to list of InverterOptions."""
+    if not isinstance(data, list):
+        raise ValueError(f"Expected list, got {type(data)}")
+    return [cattrs.structure(item, InverterOptions) for item in data]
+
+
+def _convert_schedules(data: list) -> "list[Schedule]":
+    """Convert list of dicts to list of Schedule."""
+    if not isinstance(data, list):
+        raise ValueError(f"Expected list, got {type(data)}")
+    return [cattrs.structure(item, Schedule) for item in data]
 
 
 @attrs.define()
@@ -103,6 +125,50 @@ class Options(MQTTOptions):
         """Do some checks."""
         if self.driver == "umodbus":
             _LOG.warning("Try *pymodbus* if your encounter any issues with *umodbus*")
+
+    def load_dict(
+        self, value: dict, log_lvl: int = logging.DEBUG, log_msg: str = ""
+    ) -> None:
+        """Load configuration with custom handling for complex types."""
+        _LOG.log(log_lvl, "%s: %s", log_msg or "Loading config", value)
+
+        # Create a copy to avoid modifying the original
+        config = value.copy()
+
+        # Handle connectors conversion
+        if "connectors" in config:
+            config["connectors"] = _convert_connectors(config["connectors"])
+
+        # Handle inverters conversion
+        if "inverters" in config:
+            config["inverters"] = _convert_inverters(config["inverters"])
+
+        # Handle schedules conversion
+        if "schedules" in config:
+            config["schedules"] = _convert_schedules(config["schedules"])
+
+        # Use cattrs to structure the configuration, but exclude already-converted fields
+        try:
+            # Create a copy without the complex types for cattrs processing
+            simple_config = {
+                k: v
+                for k, v in config.items()
+                if k not in ("connectors", "inverters", "schedules")
+            }
+            val = CONVERTER.structure(simple_config, self.__class__)
+        except Exception as exc:
+            msg = "Error loading config: " + "\n".join(transform_error(exc))
+            _LOG.error(msg)
+            raise ValueError(msg) from None
+
+        # Set attributes from the structured object
+        for key in config:
+            if key in ("connectors", "inverters", "schedules"):
+                # Use our pre-converted values
+                setattr(self, key.lower(), config[key])
+            else:
+                # Use cattrs-converted values
+                setattr(self, key.lower(), getattr(val, key.lower()))
 
 
 OPT = Options()
