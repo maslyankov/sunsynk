@@ -17,6 +17,19 @@ def _convert_connectors(data: list) -> "list[ConnectorOptions]":
     """Convert list of dicts to list of ConnectorOptions."""
     if not isinstance(data, list):
         raise ValueError(f"Expected list, got {type(data)}")
+
+    # Debug logging
+    _LOG.debug("Converting connectors: %s", data)
+    for i, item in enumerate(data):
+        _LOG.debug("Connector[%d]: %s (type: %s)", i, item, type(item))
+        if not isinstance(item, dict):
+            _LOG.error(
+                "Connector[%d] is not a dict: %s (type: %s)", i, item, type(item)
+            )
+            raise ValueError(
+                f"Connector[{i}] is not a dict: {item} (type: {type(item)})"
+            )
+
     return [cattrs.structure(item, ConnectorOptions) for item in data]
 
 
