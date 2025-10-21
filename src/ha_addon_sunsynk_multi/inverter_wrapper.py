@@ -62,7 +62,13 @@ class InverterWrapper(Sunsynk):
         self, sensor: RWSensor, value: ValType, *, msg: str = ""
     ) -> None:
         """Write sensor value using shared connector."""
-        await self.connector.write_sensor(sensor, value, msg=msg)
+        # Store original server_id and temporarily override
+        original_server_id = self.connector.server_id
+        self.connector.server_id = self.server_id
+        try:
+            await self.connector.write_sensor(sensor, value, msg=msg)
+        finally:
+            self.connector.server_id = original_server_id
 
     async def read_sensors(self, sensors: Iterable[Sensor]) -> None:
         """Read sensors using shared connector."""
