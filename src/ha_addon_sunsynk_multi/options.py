@@ -203,12 +203,7 @@ class Options(MQTTOptions):
         if "schedules" in config:
             config["schedules"] = _convert_schedules(config["schedules"])
 
-        # Set the complex fields directly first
-        for key in ("connectors", "inverters", "schedules"):
-            if key in config:
-                setattr(self, key.lower(), config[key])
-
-        # Use cattrs to structure the remaining configuration
+        # Use cattrs to structure the remaining configuration (excluding complex fields)
         try:
             # Create a copy without the complex types for cattrs processing
             simple_config = {
@@ -244,6 +239,11 @@ class Options(MQTTOptions):
         # Set attributes from the structured object (excluding already set complex fields)
         for key in simple_config:
             setattr(self, key.lower(), getattr(val, key.lower()))
+
+        # Set the complex fields directly
+        for key in ("connectors", "inverters", "schedules"):
+            if key in config:
+                setattr(self, key.lower(), config[key])
 
         # Handle sensor overrides
         if isinstance(self.sensor_overrides, list):
