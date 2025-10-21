@@ -48,14 +48,70 @@ def _convert_inverters(data: list) -> "list[InverterOptions]":
     """Convert list of dicts to list of InverterOptions."""
     if not isinstance(data, list):
         raise ValueError(f"Expected list, got {type(data)}")
-    return [cattrs.structure(item, InverterOptions) for item in data]
+
+    # Normalize field names within each inverter config
+    normalized_data = []
+    for item in data:
+        if isinstance(item, dict):
+            # Create a copy and normalize field names
+            normalized_item = item.copy()
+
+            # Map uppercase field names to lowercase
+            field_mapping = {
+                "SERIAL_NR": "serial_nr",
+                "HA_PREFIX": "ha_prefix",
+                "MODBUS_ID": "modbus_id",
+                "DONGLE_SERIAL_NUMBER": "dongle_serial_number",
+            }
+
+            for upper_key, lower_key in field_mapping.items():
+                if upper_key in normalized_item and lower_key not in normalized_item:
+                    normalized_item[lower_key] = normalized_item.pop(upper_key)
+                    _LOG.debug(
+                        "Normalized inverter field: %s -> %s", upper_key, lower_key
+                    )
+
+            normalized_data.append(normalized_item)
+        else:
+            normalized_data.append(item)
+
+    return [cattrs.structure(item, InverterOptions) for item in normalized_data]
 
 
 def _convert_schedules(data: list) -> "list[Schedule]":
     """Convert list of dicts to list of Schedule."""
     if not isinstance(data, list):
         raise ValueError(f"Expected list, got {type(data)}")
-    return [cattrs.structure(item, Schedule) for item in data]
+
+    # Normalize field names within each schedule config
+    normalized_data = []
+    for item in data:
+        if isinstance(item, dict):
+            # Create a copy and normalize field names
+            normalized_item = item.copy()
+
+            # Map uppercase field names to lowercase
+            field_mapping = {
+                "KEY": "key",
+                "READ_EVERY": "read_every",
+                "REPORT_EVERY": "report_every",
+                "CHANGE_ANY": "change_any",
+                "CHANGE_BY": "change_by",
+                "CHANGE_PERCENT": "change_percent",
+            }
+
+            for upper_key, lower_key in field_mapping.items():
+                if upper_key in normalized_item and lower_key not in normalized_item:
+                    normalized_item[lower_key] = normalized_item.pop(upper_key)
+                    _LOG.debug(
+                        "Normalized schedule field: %s -> %s", upper_key, lower_key
+                    )
+
+            normalized_data.append(normalized_item)
+        else:
+            normalized_data.append(item)
+
+    return [cattrs.structure(item, Schedule) for item in normalized_data]
 
 
 @attrs.define()
