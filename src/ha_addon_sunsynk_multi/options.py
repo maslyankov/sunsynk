@@ -11,13 +11,23 @@ from .timer_schedule import Schedule
 _LOG = logging.getLogger(__name__)
 
 
-def _convert_connectors(data: list) -> "list[ConnectorOptions]":
-    """Convert list of dicts to list of ConnectorOptions."""
+def _convert_connectors(data: list | dict) -> "list[ConnectorOptions]":
+    """Convert list of dicts or dict of dicts to list of ConnectorOptions."""
     _LOG.debug("_convert_connectors called with: %s (type: %s)", data, type(data))
 
-    if not isinstance(data, list):
-        _LOG.error("Expected list, got %s: %s", type(data), data)
-        raise ValueError(f"Expected list, got {type(data)}")
+    if isinstance(data, dict):
+        # Convert dict format to list format
+        # e.g., {"tcp_gateway": {...}} -> [{"name": "tcp_gateway", ...}]
+        connector_list = []
+        for name, config in data.items():
+            connector_config = config.copy()
+            connector_config["name"] = name  # Add the name from the key
+            connector_list.append(connector_config)
+        data = connector_list
+        _LOG.debug("Converted dict to list format: %s", data)
+    elif not isinstance(data, list):
+        _LOG.error("Expected list or dict, got %s: %s", type(data), data)
+        raise ValueError(f"Expected list or dict, got {type(data)}")
 
     # Debug logging
     _LOG.debug("Converting connectors: %s", data)
@@ -150,6 +160,18 @@ class Options(MQTTOptions):
 
         # Create a copy to avoid modifying the original
         config = value.copy()
+
+        # Normalize field names - convert uppercase to lowercase for complex fields
+        field_mapping = {
+            "CONNECTORS": "connectors",
+            "INVERTERS": "inverters",
+            "SCHEDULES": "schedules",
+        }
+
+        for upper_key, lower_key in field_mapping.items():
+            if upper_key in config and lower_key not in config:
+                config[lower_key] = config.pop(upper_key)
+                _LOG.debug("Normalized field name: %s -> %s", upper_key, lower_key)
 
         # Handle connectors conversion
         if "connectors" in config:
