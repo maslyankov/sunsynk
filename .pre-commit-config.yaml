@@ -1,11 +1,17 @@
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.19
+    rev: 0.9.5
     hooks:
       - id: uv-lock
 
   - repo: local
     hooks:
+      - id: gen_sensors
+        name: Generate sensor docs
+        entry: uv run scripts/gen_sensors.py
+        language: system
+        pass_filenames: false
+
       - id: pyproject-fmt
         name: pyproject-fmt
         entry: uv run pyproject-fmt pyproject.toml

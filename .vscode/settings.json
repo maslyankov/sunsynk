@@ -1,0 +1,15 @@
+{
+    "cSpell.words": [
+        "Deye",
+        "hass",
+        "hassio",
+        "mbusd",
+        "mosquitto",
+        "MQTT",
+        "Sunsynk",
+        "umodbus"
+    ],
+    "cSpell.ignoreRandomStrings": true,
+    "reflowMarkdown.preferredLineLength": 100,
+    "reflowMarkdown.wrapLongLinks": "wrap"
+}

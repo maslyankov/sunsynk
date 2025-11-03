@@ -6,6 +6,8 @@ import attrs
 import cattrs
 from mqtt_entity.options import CONVERTER, MQTTOptions, transform_error
 
+from sunsynk.helpers import slug
+
 from .timer_schedule import Schedule
 
 _LOG = logging.getLogger(__name__)
@@ -148,40 +150,6 @@ class InverterOptions:
     serial_nr: str = ""
     dongle_serial_number: int = 0
 
-    def __attrs_post_init__(self) -> None:
-        """Do some checks."""
-        self.ha_prefix = self.ha_prefix.lower().strip()
-
-        # Validate connector vs port usage
-        if self.connector and self.port:
-            _LOG.warning(
-                "%s: Both connector and port specified. Using connector: %s",
-                self.serial_nr,
-                self.connector,
-            )
-        # Legacy port handling
-        if not self.connector:
-            if self.dongle_serial_number:
-                if self.port:
-                    _LOG.warning(
-                        "%s: No port expected when you specify a serial number."
-                    )
-                return
-            if self.port == "":
-                _LOG.warning(
-                    "%s: Using port from debug_device: %s",
-                    self.serial_nr,
-                    OPT.debug_device,
-                )
-                self.port = OPT.debug_device
-            ddev = self.port == ""
-            if ddev:
-                _LOG.warning("Empty port, will use the debug device")
-            if ddev or self.port.lower().startswith(("serial:", "/dev")):
-                _LOG.warning(
-                    "Use mbusd instead of connecting directly to a serial port"
-                )
-
 
 @attrs.define()
 class Options(MQTTOptions):
@@ -203,10 +171,52 @@ class Options(MQTTOptions):
     manufacturer: str = "Sunsynk"
     debug_device: str = ""
 
-    def __attrs_post_init__(self) -> None:
-        """Do some checks."""
+    async def init_addon(self) -> None:
+        """Init Add-On."""
+        await super().init_addon()
+
         if self.driver == "umodbus":
             _LOG.warning("Try *pymodbus* if your encounter any issues with *umodbus*")
+
+        for inv in self.inverters:
+            inv.ha_prefix = slug(inv.ha_prefix.strip())
+
+            # Validate connector vs port usage
+            if inv.connector and inv.port:
+                _LOG.warning(
+                    "%s: Both connector and port specified. Using connector: %s",
+                    inv.serial_nr,
+                    inv.connector,
+                )
+
+            if inv.dongle_serial_number:
+                if inv.port:
+                    _LOG.warning(
+                        "%s: No port expected when you specify a serial number."
+                    )
+                continue
+
+            # Legacy port handling (only if no connector specified)
+            if not inv.connector:
+                if not inv.port or inv.port.lower().startswith(("serial:", "/dev")):
+                    _LOG.warning(
+                        "Use mbusd instead of connecting directly to a serial port"
+                    )
+
+                if not inv.port:
+                    _LOG.warning(
+                        "%s: Using port from debug_device: %s",
+                        inv.serial_nr,
+                        self.debug_device,
+                    )
+                    inv.port = self.debug_device
+
+        # Check all ha_prefixes are unique
+        ha_prefs = [i.ha_prefix for i in self.inverters]
+        if "" in ha_prefs or len(set(ha_prefs)) != len(ha_prefs):
+            raise ValueError(
+                f"Inverters need a unique HA_PREFIX: {', '.join(ha_prefs)}"
+            )
 
     def load_dict(
         self, value: dict, log_lvl: int = logging.DEBUG, log_msg: str = ""
