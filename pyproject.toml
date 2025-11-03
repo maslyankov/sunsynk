@@ -49,6 +49,8 @@ dev = [
 module-name = [ "sunsynk", "ha_addon_sunsynk_multi" ]
 
 [tool.ruff]
+target-version = "py312"
+line-length = 88
 include = [ "src/**/*.py" ]
 format.line-ending = "lf"
 format.docstring-code-format = true
