@@ -77,12 +77,52 @@ class Sensor16(Sensor):
             self.history1.pop(0)
             self.history0.pop(0)
         # _LOG.debug("%s %s", hex_str(regs), mean(self.history0))
-        if (
-            any(r == 0 for r in self.history1)  # reg[1] between negative and positive
-            or (  # a big drop in reg[0] could also be close to a neg to pos transition
-                regs[1] == 0xFFFF and mean(self.history0) - regs[0] > 10000
-            )
+
+        # Determine if we should use 16-bit or 32-bit interpretation
+        use_16bit = False
+
+        # If reg[1] is 0, definitely use 16-bit
+        if regs[1] == 0:
+            use_16bit = True
+        # If any value in history had reg[1] == 0, use 16-bit (transitioning between +/-)
+        elif any(r == 0 for r in self.history1):
+            use_16bit = True
+        # If reg[1] is 0xFFFF and there's a big drop, likely transitioning
+        elif (
+            regs[1] == 0xFFFF
+            and len(self.history0) > 0
+            and mean(self.history0) - regs[0] > 10000
         ):
+            use_16bit = True
+        # If reg[1] is consistently very small (likely noise/transient, not real 32-bit value)
+        # Only apply this check if reg[1] is small AND it's inconsistent (not a stable pattern)
+        elif len(self.history1) >= 5 and all(r < 0x0100 for r in self.history1[-5:]):
+            # Check if reg[1] values are inconsistent (varying), which suggests noise
+            # If they're all the same, it's likely a legitimate 32-bit value
+            reg1_values = self.history1[-5:]
+            reg1_variance = max(reg1_values) - min(reg1_values)
+
+            # Only treat as noise if reg[1] values are varying (variance > 0)
+            # AND the 32-bit interpretation would give an unreasonably high value
+            if reg1_variance > 0:
+                # Calculate what the raw register value would be if interpreted as 32-bit
+                raw_32bit = unpack_value(regs, signed=self.factor < 0)
+                # Calculate what the raw register value would be if interpreted as 16-bit
+                raw_16bit = unpack_value((regs[0],), signed=self.factor < 0)
+
+                # If we have history, check if 32-bit value would be unreasonably high
+                if len(self.history0) >= 5:
+                    recent_avg = mean(self.history0[-5:])
+                    # If 32-bit raw value is more than 5x the recent average AND
+                    # 16-bit value is much closer to recent values, likely wrong
+                    if (
+                        abs(raw_32bit) > abs(recent_avg * 5)
+                        and abs(raw_16bit - recent_avg)
+                        < abs(raw_32bit - recent_avg) * 0.3
+                    ):
+                        use_16bit = True
+
+        if use_16bit:
             regs = (regs[0],)
         val: NumType = unpack_value(regs, signed=self.factor < 0)
         val = int_round(float(val) * abs(self.factor))
