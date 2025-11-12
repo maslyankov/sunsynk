@@ -101,7 +101,7 @@ class Sensor16(Sensor):
     """History of reg[1]. If last 10 are all > 0, unpack as 32-bit, else only 16-bit."""
     history0: list[int] = attrs.field(factory=list)
 
-    def reg_to_value(self, regs: RegType) -> ValType:
+    def reg_to_value(self, regs: RegType) -> ValType:  # noqa: PLR0912
         """Return the value from the registers."""
         regs = self.masked(regs)
         self.history1.append(regs[1])
@@ -128,32 +128,67 @@ class Sensor16(Sensor):
         ):
             use_16bit = True
         # If reg[1] is consistently very small (likely noise/transient, not real 32-bit value)
-        # Only apply this check if reg[1] is small AND it's inconsistent (not a stable pattern)
-        elif len(self.history1) >= 5 and all(r < 0x0100 for r in self.history1[-5:]):
-            # Check if reg[1] values are inconsistent (varying), which suggests noise
-            # If they're all the same, it's likely a legitimate 32-bit value
-            reg1_values = self.history1[-5:]
-            reg1_variance = max(reg1_values) - min(reg1_values)
+        # Check if reg[1] is small and compare interpretations
+        elif len(self.history1) >= 3 and all(r < 0x0100 for r in self.history1[-3:]):
+            # Calculate what the raw register value would be if interpreted as 32-bit
+            raw_32bit = unpack_value(regs, signed=self.factor < 0)
+            # Calculate what the raw register value would be if interpreted as 16-bit
+            raw_16bit = unpack_value((regs[0],), signed=self.factor < 0)
 
-            # Only treat as noise if reg[1] values are varying (variance > 0)
-            # AND the 32-bit interpretation would give an unreasonably high value
-            if reg1_variance > 0:
-                # Calculate what the raw register value would be if interpreted as 32-bit
-                raw_32bit = unpack_value(regs, signed=self.factor < 0)
-                # Calculate what the raw register value would be if interpreted as 16-bit
-                raw_16bit = unpack_value((regs[0],), signed=self.factor < 0)
+            # If we have history, check if 32-bit value would be unreasonably different
+            if len(self.history0) >= 5:
+                recent_avg = mean(self.history0[-5:])
+                # Calculate how far each interpretation is from recent average
+                dist_32bit = abs(raw_32bit - recent_avg)
+                dist_16bit = abs(raw_16bit - recent_avg)
 
-                # If we have history, check if 32-bit value would be unreasonably high
-                if len(self.history0) >= 5:
-                    recent_avg = mean(self.history0[-5:])
-                    # If 32-bit raw value is more than 5x the recent average AND
-                    # 16-bit value is much closer to recent values, likely wrong
-                    if (
-                        abs(raw_32bit) > abs(recent_avg * 5)
-                        and abs(raw_16bit - recent_avg)
-                        < abs(raw_32bit - recent_avg) * 0.3
-                    ):
-                        use_16bit = True
+                # Check if reg[0] itself is large (>= 0x3000 = 12288) but not 0xFFFF (sentinel value),
+                # which suggests it's a 16-bit value being incorrectly interpreted as part of a 32-bit value
+                reg0_is_large = regs[0] >= 0x3000 and regs[0] != 0xFFFF
+                # Check if reg[0] is close to recent average (within 2x), suggesting it's a standalone value
+                # If it's close, it's likely part of a legitimate 32-bit value (like in the test case)
+                reg0_close_to_avg = abs(regs[0] - recent_avg) < recent_avg * 2
+
+                # Use 16-bit if:
+                # 1. reg[0] is large (>= 0x3000, not 0xFFFF) AND significantly larger than recent avg (> 2x)
+                #    AND 32-bit would be way too high (> 3x recent avg) AND 16-bit is much closer
+                #    This catches the user's case (0x7E00 with small reg[1])
+                # OR
+                # 2. reg[0] is NOT close to recent average AND 32-bit is way too high (> 5x)
+                #    AND 16-bit is much closer - this avoids false positives for legitimate 32-bit
+                if (
+                    reg0_is_large
+                    and regs[0]
+                    > recent_avg
+                    * 2  # reg[0] is significantly larger than recent average
+                    and abs(raw_32bit) > abs(recent_avg * 3)
+                    and dist_16bit < dist_32bit * 0.4
+                ):
+                    use_16bit = True
+                elif (
+                    regs[0]
+                    != 0xFFFF  # Exclude 0xFFFF which is a special sentinel value
+                    and not reg0_close_to_avg
+                    and abs(raw_32bit) > abs(recent_avg * 5)
+                    and dist_16bit < dist_32bit * 0.3
+                ):
+                    use_16bit = True
+            # With less history, be more conservative but still catch obvious issues
+            elif len(self.history0) >= 3:
+                recent_avg = mean(self.history0[-3:])
+                dist_32bit = abs(raw_32bit - recent_avg)
+                dist_16bit = abs(raw_16bit - recent_avg)
+                # Only use 16-bit if 32-bit is way too high (> 5x) and 16-bit is much closer
+                if (
+                    abs(raw_32bit) > abs(recent_avg * 5)
+                    and dist_16bit < dist_32bit * 0.3
+                ):
+                    use_16bit = True
+            # Even without much history, if reg[1] is very small and 32-bit would be huge
+            elif regs[1] > 0 and abs(raw_32bit) > 50000:
+                # If 16-bit interpretation gives a more reasonable value (< 35000)
+                if abs(raw_16bit) < 35000:
+                    use_16bit = True
 
         if use_16bit:
             regs = (regs[0],)
