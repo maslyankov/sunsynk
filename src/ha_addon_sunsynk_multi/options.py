@@ -299,6 +299,7 @@ class Options(MQTTOptions):
                 number_entity_mode: str = "auto"
                 prog_time_interval: int = 15
                 sensor_definitions: str = "single-phase"
+                sensor_overrides: list[str] | None = None
                 sensors: list[str] = attrs.field(factory=list)
                 sensors_first_inverter: list[str] = attrs.field(factory=list)
                 read_allow_gap: int = 2
@@ -309,7 +310,7 @@ class Options(MQTTOptions):
                 manufacturer: str = "Sunsynk"
                 debug_device: str = ""
 
-            val = CONVERTER.structure(simple_config, SimpleOptions)
+            structured_opts = CONVERTER.structure(simple_config, SimpleOptions)
         except Exception as exc:
             msg = "Error loading config: " + "\n".join(transform_error(exc))
             _LOG.error(msg)
@@ -317,7 +318,7 @@ class Options(MQTTOptions):
 
         # Set attributes from the structured object (excluding already set complex fields)
         for key in simple_config:
-            setattr(self, key.lower(), getattr(val, key.lower()))
+            setattr(self, key.lower(), getattr(structured_opts, key.lower()))
 
         # Set the complex fields directly
         for key in ("connectors", "inverters", "schedules"):
@@ -329,11 +330,13 @@ class Options(MQTTOptions):
             self.overrides = {}
             errs = {}
             for item in self.sensor_overrides:
-                key, _, val = str(item).partition("=")
+                key, _, str_val = str(item).partition("=")
                 try:
-                    self.overrides[key.strip()] = float(val) if "." in val else int(val)
+                    self.overrides[key.strip()] = (
+                        float(str_val) if "." in str_val else int(str_val)
+                    )
                 except ValueError:
-                    errs[key] = val
+                    errs[key] = str_val
             if errs:
                 _LOG.warning("Invalid sensor overrides found: %s", errs)
 
