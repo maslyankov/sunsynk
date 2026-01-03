@@ -184,6 +184,7 @@ class InverterOptions:
                     "Use mbusd instead of connecting directly to a serial port"
                 )
 
+
 @attrs.define()
 class Options(MQTTOptions):
     """HASS Addon Options."""
@@ -243,7 +244,7 @@ class Options(MQTTOptions):
                 f"Inverters need a unique HA_PREFIX: {', '.join(ha_prefs)}"
             )
 
-    def load_dict(
+    def load_dict(  # noqa: PLR0912
         self, value: dict, log_lvl: int = logging.DEBUG, log_msg: str = ""
     ) -> None:
         """Load configuration with custom handling for complex types."""
