@@ -102,19 +102,28 @@ class Sensor16(Sensor):
     history0: list[int] = attrs.field(factory=list)
 
     def reg_to_value(self, regs: RegType) -> ValType:  # noqa: PLR0912
-        """Return the value from the registers."""
+        """Return the value from the registers.
+
+        This method handles 16-bit/32-bit auto-detection for power sensors.
+        The key insight is that when using 16-bit interpretation, the signedness
+        should be determined by reg[1], not by self.factor:
+        - reg[1] == 0: the 32-bit value was positive (0 to 65535) -> use unsigned
+        - reg[1] == 0xFFFF: the 32-bit value was negative -> use signed
+        """
         regs = self.masked(regs)
+        # Save original reg[1] before any modifications for sign determination
+        original_reg1 = regs[1]
+
         self.history1.append(regs[1])
         self.history0.append(regs[0])
         if len(self.history1) > 10:
             self.history1.pop(0)
             self.history0.pop(0)
-        # _LOG.debug("%s %s", hex_str(regs), mean(self.history0))
 
         # Determine if we should use 16-bit or 32-bit interpretation
         use_16bit = False
 
-        # If reg[1] is 0, definitely use 16-bit
+        # If reg[1] is 0, use 16-bit interpretation
         if regs[1] == 0:
             use_16bit = True
         # If any value in history had reg[1] == 0, use 16-bit (transitioning between +/-)
@@ -133,7 +142,8 @@ class Sensor16(Sensor):
             # Calculate what the raw register value would be if interpreted as 32-bit
             raw_32bit = unpack_value(regs, signed=self.factor < 0)
             # Calculate what the raw register value would be if interpreted as 16-bit
-            raw_16bit = unpack_value((regs[0],), signed=self.factor < 0)
+            # Use unsigned for comparison since we'll determine sign from reg[1] later
+            raw_16bit = unpack_value((regs[0],), signed=False)
 
             # If we have history, check if 32-bit value would be unreasonably different
             if len(self.history0) >= 5:
@@ -142,32 +152,21 @@ class Sensor16(Sensor):
                 dist_32bit = abs(raw_32bit - recent_avg)
                 dist_16bit = abs(raw_16bit - recent_avg)
 
-                # Check if reg[0] itself is large (>= 0x3000 = 12288) but not 0xFFFF (sentinel value),
-                # which suggests it's a 16-bit value being incorrectly interpreted as part of a 32-bit value
+                # Check if reg[0] itself is large (>= 0x3000 = 12288) but not 0xFFFF,
+                # which suggests it's a 16-bit value being incorrectly interpreted
                 reg0_is_large = regs[0] >= 0x3000 and regs[0] != 0xFFFF
-                # Check if reg[0] is close to recent average (within 2x), suggesting it's a standalone value
-                # If it's close, it's likely part of a legitimate 32-bit value (like in the test case)
+                # Check if reg[0] is close to recent average (within 2x)
                 reg0_close_to_avg = abs(regs[0] - recent_avg) < recent_avg * 2
 
-                # Use 16-bit if:
-                # 1. reg[0] is large (>= 0x3000, not 0xFFFF) AND significantly larger than recent avg (> 2x)
-                #    AND 32-bit would be way too high (> 3x recent avg) AND 16-bit is much closer
-                #    This catches the user's case (0x7E00 with small reg[1])
-                # OR
-                # 2. reg[0] is NOT close to recent average AND 32-bit is way too high (> 5x)
-                #    AND 16-bit is much closer - this avoids false positives for legitimate 32-bit
                 if (
                     reg0_is_large
-                    and regs[0]
-                    > recent_avg
-                    * 2  # reg[0] is significantly larger than recent average
+                    and regs[0] > recent_avg * 2
                     and abs(raw_32bit) > abs(recent_avg * 3)
                     and dist_16bit < dist_32bit * 0.4
                 ):
                     use_16bit = True
                 elif (
-                    regs[0]
-                    != 0xFFFF  # Exclude 0xFFFF which is a special sentinel value
+                    regs[0] != 0xFFFF
                     and not reg0_close_to_avg
                     and abs(raw_32bit) > abs(recent_avg * 5)
                     and dist_16bit < dist_32bit * 0.3
@@ -178,7 +177,6 @@ class Sensor16(Sensor):
                 recent_avg = mean(self.history0[-3:])
                 dist_32bit = abs(raw_32bit - recent_avg)
                 dist_16bit = abs(raw_16bit - recent_avg)
-                # Only use 16-bit if 32-bit is way too high (> 5x) and 16-bit is much closer
                 if (
                     abs(raw_32bit) > abs(recent_avg * 5)
                     and dist_16bit < dist_32bit * 0.3
@@ -186,13 +184,18 @@ class Sensor16(Sensor):
                     use_16bit = True
             # Even without much history, if reg[1] is very small and 32-bit would be huge
             elif regs[1] > 0 and abs(raw_32bit) > 50000:
-                # If 16-bit interpretation gives a more reasonable value (< 35000)
                 if abs(raw_16bit) < 35000:
                     use_16bit = True
 
         if use_16bit:
-            regs = (regs[0],)
-        val: NumType = unpack_value(regs, signed=self.factor < 0)
+            # When using 16-bit, determine signedness from reg[1]:
+            # - reg[1] == 0: 32-bit value was positive (0-65535), use unsigned
+            # - reg[1] == 0xFFFF: 32-bit value was negative, use signed
+            # This prevents large positive values (>32767) from being interpreted as negative
+            use_signed = original_reg1 == 0xFFFF
+            val: NumType = unpack_value((regs[0],), signed=use_signed)
+        else:
+            val = unpack_value(regs, signed=self.factor < 0)
         val = int_round(float(val) * abs(self.factor))
         return val
 
