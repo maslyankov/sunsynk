@@ -35,6 +35,23 @@ class Sensor:
         """Get the sensor ID."""
         return slug(self.name)
 
+    @property
+    def source(self) -> str:
+        """Return the source of the sensor."""
+        if not self.address:
+            res = "const"
+        elif len(self.address) == 1:
+            res = f"[{self.address[0]}]"
+        else:
+            res = str(self.address).replace("(", "[").replace(")", "]").replace(" ", "")
+
+        if self.bitmask:
+            res += f" & 0x{self.bitmask:02X}"
+        sig = " S" if self.factor == -1 else ""
+        if abs(self.factor) != 1:
+            res += f" * {abs(self.factor)}"
+        return f"{res}{sig}"
+
     def reg_to_value(self, regs: RegType) -> ValType:
         """Return the value from the registers."""
         regs = self.masked(regs)
@@ -58,6 +75,22 @@ class Sensor:
         if not isinstance(other, Sensor):
             raise TypeError(str(type(other)))
         return self.id == other.id
+
+
+@attrs.define(slots=True, eq=False)
+class Constant(Sensor):
+    """Sensor that always returns a constant value."""
+
+    value: NumType = None  # type: ignore[assignment]
+
+    def __attrs_post_init__(self) -> None:
+        """Post-initialization processing."""
+        assert not self.address
+        assert self.value is not None
+
+    def reg_to_value(self, regs: RegType) -> ValType:
+        """Return the constant value."""
+        return self.value
 
 
 @attrs.define(slots=True, eq=False)
@@ -158,6 +191,47 @@ class SensorDefinitions:
     def copy(self) -> SensorDefinitions:
         """Copy the sensor definitions."""
         return SensorDefinitions(all=self.all.copy(), deprecated=self.deprecated.copy())
+
+    def override(self, values: dict[str, int | float]) -> None:
+        """Override existing sensors with new definitions."""
+        new_sensors = dict[str, Sensor]()
+
+        def _copy(old: Sensor) -> Sensor:
+            sid = old.id
+            if news := new_sensors.get(sid):
+                return news
+            news = self.all[sid] = new_sensors[sid] = attrs.evolve(old)
+
+            # replace all references
+            for sen in self.all.values():
+                for attrn in dir(sen):
+                    cur = getattr(sen, attrn, None)
+                    if isinstance(cur, Sensor) and old == cur:
+                        setattr(_copy(sen), attrn, news)
+            return news
+
+        for key, val in values.items():
+            sen_name, _, sen_attr = key.partition(".")
+            sen = self.all.get(slug(sen_name))
+            if sen is None:
+                _LOG.error("Override: Sensor %s not found, skipping", sen_name)
+                continue
+            if sen_attr == "":
+                if not isinstance(sen, Constant):
+                    _LOG.warning(
+                        "Override for %s is not a Constant sensor, skipping", key
+                    )
+                    continue
+                sen_attr = "value"
+
+            if not hasattr(sen, sen_attr):
+                _LOG.error(
+                    "Override: Sensor %s has no attribute %s, skipping", key, sen_attr
+                )
+                continue
+
+            setattr(_copy(sen), sen_attr, val)
+            _LOG.info("Override: Sensor %s.%s set to %s", key, sen_attr, val)
 
 
 @attrs.define(slots=True, eq=False)
@@ -260,13 +334,18 @@ class EnumSensor(TextSensor):
         if res is None:
             if self.unknown:
                 return self.unknown.format(regsm[0])
+            url = {
+                "device_type": "https://github.com/kellerza/sunsynk/blob/main/src/sunsynk/definitions/__init__.py#L28"
+            }.get(
+                self.id,
+                "https://github.com/kellerza/sunsynk/tree/main/src/sunsynk/definitions",
+            )
             if self._warn:
                 _LOG.warning(
-                    "%s: Unknown register value %s. "
-                    "Consider extending the definition with a PR. "
-                    "https://github.com/kellerza/sunsynk/tree/main/src/sunsynk/definitions",
+                    "%s: Unknown register value %s. Consider extending the definition with a PR. %s",
                     self.id,
-                    regsm[0],
+                    hex(regsm[0]),
+                    url,
                 )
             self._warn = False
             return None

@@ -7,14 +7,17 @@ from itertools import pairwise
 import pytest
 
 from sunsynk.definitions.single_phase import AMPS, CELSIUS, SENSORS, VOLT, WATT
+from sunsynk.rwsensors import NumberRWSensor
 from sunsynk.sensors import (
     BinarySensor,
+    Constant,
     FaultSensor,
     InverterStateSensor,
     MathSensor,
     SDStatusSensor,
     Sensor,
     Sensor16,
+    SensorDefinitions,
     SerialSensor,
     TempSensor,
 )
@@ -274,3 +277,67 @@ def test_decode_fault() -> None:
     assert s.reg_to_value(regs) == "F32"
     regs = (0x0, 0x0, 0x1, 0x0)
     assert s.reg_to_value(regs) == "F33"
+
+
+def test_source() -> None:
+    """Test sensor source."""
+    assert Sensor(1, "test_sensor", "V", -1).source == "[1] S"
+    assert Sensor((1, 2), "test_sensor", "V", 10).source == "[1,2] * 10"
+    assert Sensor((1, 2), "test_sensor", "V", bitmask=0xA).source == "[1,2] & 0x0A"
+    assert (
+        Sensor((1, 2), "test_sensor", "V", bitmask=0xA, factor=-1).source
+        == "[1,2] & 0x0A S"
+    )
+    assert Sensor((1, 2), "test_sensor", "V", bitmask=0xEF1A).source == "[1,2] & 0xEF1A"
+
+
+def test_override() -> None:
+    """Tests."""
+    sen = SensorDefinitions()
+    s0 = Sensor(1, "test sensor", "V", -1)
+    sen += s0
+    sen.override({"test_sensor.factor": -99})
+    s1 = sen.all["test_sensor"]
+    assert s0.factor == -1
+    assert s1.factor == -99
+
+
+def test_override_const() -> None:
+    """Tests."""
+    sen = SensorDefinitions()
+    c0 = Constant((), "constant sensor", value=42)
+    s1 = NumberRWSensor(1, "rw sensor", "V", factor=1, min=c0, max=100)
+    assert s1.min == c0
+
+    sen += (c0, s1)
+
+    sen.override({"constant_sensor": 99})
+    c1 = sen.all["constant_sensor"]
+    assert c0.value == 42
+    assert isinstance(c1, Constant) and c1.value == 99
+    assert isinstance(sen.all["rw_sensor"], NumberRWSensor)
+    s2 = sen.all["rw_sensor"]
+    assert s2.min is c1
+    assert s2.min is not c0
+
+
+def test_override_many() -> None:
+    """Tests."""
+    sen = SensorDefinitions()
+    s0 = NumberRWSensor(1, "rw sensor", "V", factor=1, min=1, max=100)
+    sen += s0
+    sen.override(
+        {
+            "rw_sensor.factor": 10,
+            "rw_sensor.min": -50,
+            "rw_sensor.max": 50,
+        }
+    )
+    assert s0.factor == 1
+    assert s0.min == 1
+    assert s0.max == 100
+    s1 = sen.all["rw_sensor"]
+    assert isinstance(s1, NumberRWSensor)
+    assert s1.factor == 10
+    assert s1.min == -50
+    assert s1.max == 50

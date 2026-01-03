@@ -9,7 +9,7 @@ import attrs
 from sunsynk.definitions import import_defs
 from sunsynk.helpers import slug
 from sunsynk.rwsensors import RWSensor
-from sunsynk.sensors import Sensor, SensorDefinitions
+from sunsynk.sensors import Constant, Sensor, SensorDefinitions
 
 from .helpers import import_mysensors
 from .options import OPT
@@ -68,9 +68,14 @@ class SensorOptions(dict[Sensor, SensorOption]):
         """Parse options and get the various sensor lists."""
         if not DEFS.all:
             import_definitions()
+            if OPT.overrides:
+                _LOG.info(
+                    "Applying sensor overrides from configuration: %s", OPT.overrides
+                )
+                DEFS.override(OPT.overrides)
         self.clear()
 
-        self.startup = [DEFS.device_type, DEFS.protocol, DEFS.serial]
+        self.startup = [DEFS.device_type, DEFS.protocol, DEFS.serial, DEFS.rated_power]
         sensors_all = list(get_sensors(target=self, names=OPT.sensors))
         sensors_1st = list(get_sensors(target=self, names=OPT.sensors_first_inverter))
 
@@ -358,6 +363,10 @@ def get_sensors(
             continue
 
         sen = DEFS.all.get(name)
+
+        if isinstance(sen, Constant):  # never add Constants directly
+            continue
+
         if not isinstance(sen, Sensor):
             if warn:
                 _LOG.error("Unknown sensor specified: %s", name)

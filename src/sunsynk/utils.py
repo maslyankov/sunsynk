@@ -6,9 +6,13 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from textwrap import wrap
 from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from prettytable import PrettyTable
+
+if TYPE_CHECKING:
+    from sunsynk.sensors import Sensor
+    from sunsynk.sunsynk import Sunsynk
 
 
 def import_module(mod_name: str, folder: str | Path | None = None) -> ModuleType:
@@ -57,15 +61,9 @@ def pretty_table[T](
         if calculated_cols:
             for colidx, func in calculated_cols.items():
                 row[int(colidx)] = func(row_any)
-
-        if wrap_length == 0 or not any(len(v) > wrap_length for v in row):
-            table.add_row(row)
-            continue
-
-        row_wrap = [wrap(v, wrap_length) for v in row]
-        while any(row_wrap):
-            table.add_row([r[0] if r else "" for r in row_wrap])
-            row_wrap = [r[1:] for r in row_wrap]
+        if wrap_length > 0:
+            row = ["\n".join(wrap(v, wrap_length)) for v in row]
+        table.add_row(row)
 
     return table
 
@@ -77,3 +75,28 @@ def table_data[T](
     if headers is None:
         headers = list({k for v in data for k in v.keys()})
     return headers, [[v.get(k) for k in headers] for v in data]
+
+
+def pretty_table_sensors(
+    sensors: list["Sensor"],
+    inv: "Sunsynk",
+    add_hdr: list[str],
+    add_info: dict[str, list[str]],
+) -> PrettyTable:
+    """Generate a pretty table for the given sensors."""
+    data: list[list[str]] = []
+    for sen in sorted(sensors, key=lambda s: s.address):
+        row = [sen.id, sen.source, f"{inv.state[sen]} {sen.unit}"]
+        if sen.id == "serial":
+            row[2] = f"****{row[2][-5:]}"
+        if add_hdr:
+            addi = add_info.get(sen.id) or []
+            while len(addi) < len(add_hdr):
+                addi.append("")
+            while len(addi) > len(add_hdr):
+                addi.pop()
+            row.extend(addi)
+        data.append(row)
+
+    header = ["Sensor", "Source", "Value", *add_hdr]
+    return pretty_table(header, data, wrap_length=0)

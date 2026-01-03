@@ -3,9 +3,11 @@
 import asyncio
 import logging
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 from sunsynk import VERSION
+from sunsynk.utils import pretty_table_sensors
 
 from .a_inverter import STATE
 from .a_sensor import MQTT, SS_TOPIC
@@ -30,8 +32,15 @@ async def main_loop() -> int:
     await OPT.init_addon()
 
     # Print version added during build & pyproject version
-    vfile = Path(__file__) / "../../../../VERSION"
-    ver = vfile.read_text().strip() if vfile.exists() else ""
+    ver = ""
+    try:
+        for parent in Path(__file__).parents:
+            vfile = parent / "VERSION"
+            if vfile.exists():
+                ver = vfile.read_text().strip()
+                break
+    except Exception:
+        pass
     _LOG.info("sunsynk library version: %s (%s)", VERSION, ver)
 
     try:
@@ -57,8 +66,22 @@ async def main_loop() -> int:
         try:
             await ist.connect()
             await ist.hass_discover_sensors()
-            ist.cb = build_callback_schedule(ist)
+            build_callback_schedule(ist)
             CALLBACKS.append(ist.cb)
+
+            # Add info from the callback schedules
+            add_info: dict[str, list[str]] = defaultdict(lambda: ["", ""])
+            add_hdr = ["Read every", "Report every"]
+            for every_s, srun in ist.sched.read.items():
+                for sen in srun.sensors:
+                    add_info[sen.sensor.id][0] = str(every_s)
+            for every_s, srun in ist.sched.report.items():
+                for sen in srun.sensors:
+                    add_info[sen.sensor.id][1] = str(every_s)
+
+            tab = pretty_table_sensors(list(SOPT), ist.inv, add_hdr, add_info)
+            _LOG.info("Inverter %s\n%s", ist.index, tab)
+
         except (ConnectionError, ValueError) as err:
             ist.log_bold(str(err))
             _LOG.critical(

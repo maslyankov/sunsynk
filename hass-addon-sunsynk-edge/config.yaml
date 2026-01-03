@@ -1,7 +1,7 @@
 ---
 name: Sunsynk or Deye Inverter add-on (dev-edge)
 description: Add-on for a Sunsynk/Deye branded Inverter
-version: "5d526d7"
+version: "ab965a6"
 slug: hass-addon-sunsynk-edge
 image: ghcr.io/kellerza/hass-addon-sunsynk-multi
 url: "https://kellerza.github.io/sunsynk"
@@ -57,6 +57,8 @@ schema:
       DONGLE_SERIAL_NUMBER: str?
       PORT: str
   SENSOR_DEFINITIONS: list(single-phase|single-phase-16kw|three-phase|three-phase-hv)
+  SENSOR_OVERRIDES:
+    - "match(^[a-z0-9_]+(.[a-z]+)?=-?([0-9]*\\.)?[0-9]+$)?"
   SENSORS:
     - str
   SENSORS_FIRST_INVERTER:
