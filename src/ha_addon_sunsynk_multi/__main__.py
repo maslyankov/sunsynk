@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -23,13 +24,30 @@ from .timer_callback import (
     run_callbacks,
 )
 from .timer_schedule import init_schedules
+from .web_gui import start_web_server, stop_web_server
 
 _LOG = logging.getLogger(__name__)
 
+# Web GUI configuration
+WEB_GUI_ENABLED = os.environ.get("WEB_GUI_ENABLED", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+WEB_GUI_PORT = int(os.environ.get("WEB_GUI_PORT", "8099"))
 
-async def main_loop() -> int:
+
+async def main_loop() -> int:  # noqa: PLR0912
     """Entry point."""
     await OPT.init_addon()
+
+    # Start Web GUI if enabled
+    if WEB_GUI_ENABLED:
+        try:
+            await start_web_server(OPT, WEB_GUI_PORT)
+            _LOG.info("Web GUI available at http://localhost:%d", WEB_GUI_PORT)
+        except Exception as err:
+            _LOG.warning("Failed to start Web GUI: %s", err)
 
     # Print version added during build & pyproject version
     ver = ""
@@ -93,7 +111,13 @@ async def main_loop() -> int:
         SyncCallback(name="log_errors", every=5 * 60, callback=print_errors)
     )
 
-    await run_callbacks(CALLBACKS)
+    try:
+        await run_callbacks(CALLBACKS)
+    finally:
+        # Cleanup web server on exit
+        if WEB_GUI_ENABLED:
+            await stop_web_server()
+
     return 0
 
 
